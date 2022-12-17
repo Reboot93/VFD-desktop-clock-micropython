@@ -634,12 +634,15 @@ class ScreenButton(Animation):
 class Number(Widget):
 
     def __init__(self, parant, widget_info, pbmManager, scrollSpeed=1, numberList=False, insert=None, loc="Top",
-                 brackGround=-1, refresh_interval=16):
+                 brackGround=-1, refresh_interval=16, upper_limit_number=9):
         super().__init__(parant, widget_info, insert, loc, brackGround)
         self.value = 0
         self.value_old = None
         self.scroll_flag = False
         self.scroll_count = 0
+        # 上限数字
+        self.upper_limit_number = upper_limit_number
+
         self.refresh_interval = refresh_interval
         self.last_time = time.ticks_ms()
         self.pbmManager = None
@@ -649,6 +652,9 @@ class Number(Widget):
         self.list = []
         self.scrollSpeed = scrollSpeed
         self.scroll_list_flag = False
+
+    def setUpperLimitNumber(self, value: int):
+        self.upper_limit_number = value
 
     def setValue(self, value) -> int:
         if value != self.value or self.scroll_list_flag:
@@ -673,14 +679,22 @@ class Number(Widget):
 
     def _scroll(self, value):
         self.scroll_flag = True
-        if self.value == 9 and value == 0:
-            self.switchDirection = 0
-        elif value < self.value:
-            self.switchDirection = 1
-        elif value == 9 and self.value == 0:
-            self.switchDirection = 1
+        if self.value != self.upper_limit_number and self.value != 0:
+            if value < self.value:
+                self.switchDirection = 1
+            else:
+                self.switchDirection = 0
         else:
-            self.switchDirection = 0
+            if self.value == self.upper_limit_number:
+                if value != 0:
+                    self.switchDirection = 1
+                else:
+                    self.switchDirection = 0
+            elif value == self.upper_limit_number:
+                if self.value != 0:
+                    self.switchDirection = 0
+                else:
+                    self.switchDirection = 1
         if self.switchDirection == 0 or self.switchDirection == 1:
             self.scroll_count = self.h + 1
         else:
@@ -746,11 +760,14 @@ class Number(Widget):
 
 class NumberGroup(Window):
 
-    def __init__(self, parant, window_info, scrollSpeed=1, insert=None, loc="Top", brackGround=-1):
+    # first_digit_upper_limit 只有在 到达上限后归0 时需要手动给定，例如 显示分钟，错误的值 将导致 切换动画反向
+    def __init__(self, parant, window_info, scrollSpeed=1, insert=None, loc="Top", brackGround=-1,
+                 first_digit_upper_limit=9):
         super().__init__(parant, window_info, insert, loc, brackGround)
         self.show_X = 0
         self.pbmManager = None
         self.scrollSpeed = scrollSpeed
+        self._first_digit_upper_limit = first_digit_upper_limit
         self.value = '0'
         self.digit = 1
         self.numberList = []
@@ -758,7 +775,10 @@ class NumberGroup(Window):
     def init(self):
         self.numberList = []
         for i in range(0, self.digit):
-            self._add_num()
+            if i == self.digit - 1:
+                self._add_num(self._first_digit_upper_limit)
+            else:
+                self._add_num(9)
         self._update_show_X()
 
     def setPbmManager(self, pbmManager):
@@ -795,16 +815,17 @@ class NumberGroup(Window):
     def _del_num(self):
         del self.numberList[0]
 
-    def _add_num(self):
-        self.numberList.insert(0, Number(self, (0, 0, 5, 7), self.pbmManager, self.scrollSpeed, True))
+    def _add_num(self, value):
+        self.numberList.insert(0, Number(self, (0, 0, 5, 7), self.pbmManager, self.scrollSpeed, True,
+                                         upper_limit_number=value))
 
 
 class RotaryViewPager(ViewPager):
 
     def __init__(self, parant, window_info, scrollSpeed=0.1, back=2, back_count=100, insert=None, loc="Top",
-                 brackGround=-1, refresh_interval=5):
+                 brackGround=-1, refresh_interval=5, rotary_pin=(21, 22)):
         super().__init__(parant, window_info, scrollSpeed, back, back_count, insert, loc, brackGround, refresh_interval)
-        self.rotary = Rotary(18, 19)
+        self.rotary = Rotary(rotary_pin[0], rotary_pin[1])
         print(self, self.rotary)
         self.rotary_value_old = 0
         self.rotary_value_count = 0

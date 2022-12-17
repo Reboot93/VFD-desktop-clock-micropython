@@ -38,7 +38,7 @@ class RotaryPager(RotaryViewPager):
 
 class TimeWindow(Window):
 
-    def __init__(self, parant, window_info, scrollSpeed=1, insert=None, loc="Top", flicker_interval=10):
+    def __init__(self, parant, window_info, scrollSpeed=1, insert=None, loc="Top", flicker_interval=10, rotary_pin=(21, 22)):
         super().__init__(parant, window_info, insert, loc)
         self.pbmManager = None
         self._scrollSpeed = scrollSpeed
@@ -51,7 +51,7 @@ class TimeWindow(Window):
         self._setMode = False
         self.isCheckable = True
         self._setCount = 0
-        self.rotary = Rotary(18, 19)
+        self.rotary = Rotary(rotary_pin[0], rotary_pin[1])
         self.rotary.setEnable(False)
         self.rotary.setRangeMode('MODE_WRAP')
         self.rotary.setValueMin(0)
@@ -60,9 +60,9 @@ class TimeWindow(Window):
 
     def setPbmManager(self, pbmManager):
         self.pbmManager = pbmManager
-        self._numberList = [NumberGroup(self, (0, 0, 10, 7), self._scrollSpeed),
-                            NumberGroup(self, (15, 0, 10, 7), self._scrollSpeed),
-                            NumberGroup(self, (30, 0, 10, 7), self._scrollSpeed)]
+        self._numberList = [NumberGroup(self, (0, 0, 10, 7), self._scrollSpeed, first_digit_upper_limit=2),
+                            NumberGroup(self, (15, 0, 10, 7), self._scrollSpeed, first_digit_upper_limit=5),
+                            NumberGroup(self, (30, 0, 10, 7), self._scrollSpeed, first_digit_upper_limit=5)]
         for i in range(0, 3):
             self._numberList[i].setPbmManager(pbmManager)
             self._numberList[i].setDigit(2)
@@ -161,7 +161,7 @@ class SetBrightness(Window):
         super().__init__(parant, window_info, insert, loc)
         self.pbmManager = None
         self.isCheckable = True
-        self.rotary = Rotary(18, 19)
+        self.rotary = Rotary(21, 22)
         self.rotary.setEnable(False)
         self.rotary.setRangeMode('MODE_BOUNDED')
         self.rotary.setValueMin(5)
@@ -170,7 +170,7 @@ class SetBrightness(Window):
         self.value = 50
         self.display = self.getDisplay()
         self.inver_flag = False
-        self.numberGroup = NumberGroup(self, (25, 0, 15, 7), 0.3)
+        self.numberGroup = NumberGroup(self, (25, 0, 15, 7), 0.6)
         self.dimLable = Lable(self, (0, 0, 25, 7), 0.2)
         self.dimLable.setPbm(Pbm('/lum/dim_label.pbm'))
         self.old_dim = 50
@@ -201,6 +201,7 @@ class SetBrightness(Window):
             self.parant.back_home()
         elif msg == 1:
             self.rotary.setValue(self.old_dim)
+            self.parant.switch_siganl.emit()
 
     def valueToLum(self, value):
         return round((value / 100) * 240)
@@ -398,14 +399,14 @@ class YeelightSetBrightness(Window):
         self.infoSignal.connect(self.init)
         self.pbmManager = None
         self.isCheckable = True
-        self.rotary = Rotary(18, 19)
+        self.rotary = Rotary(21, 22)
         self.rotary.setEnable(False)
         self.rotary.setRangeMode('MODE_BOUNDED')
         self.rotary.setValueMin(1)
         self.rotary.setValueMax(100)
         self.rotary.setValue(50)
         self.value = 50
-        self.numberGroup = NumberGroup(self, (25, 0, 15, 7), 0.3)
+        self.numberGroup = NumberGroup(self, (25, 0, 15, 7), 0.7)
         self.lable = Lable(self, (0, 0, 25, 7), 0.2)
         self.lable.setPbm(Pbm('/lum/dim_label.pbm'))
         self.old_brightness = 1
@@ -472,7 +473,7 @@ class YeelightSetColorTemperature(Window):
         self.infoSignal.connect(self.init)
         self.pbmManager = None
         self.isCheckable = True
-        self.rotary = Rotary(18, 19)
+        self.rotary = Rotary(21, 22)
         self.rotary.setEnable(False)
         self.rotary.setIncr(100)
         self.rotary.setRangeMode('MODE_BOUNDED')
@@ -480,7 +481,7 @@ class YeelightSetColorTemperature(Window):
         self.rotary.setValueMax(6500)
         self.rotary.setValue(6500)
         self.value = 6500
-        self.numberGroup = NumberGroup(self, (20, 0, 20, 7), 0.3)
+        self.numberGroup = NumberGroup(self, (20, 0, 20, 7), 0.7)
         self.lable = Lable(self, (0, 0, 20, 7), 0.2)
         self.lable.setPbm(Pbm('/yee/k.pbm'))
         self.old_ct = 6500
